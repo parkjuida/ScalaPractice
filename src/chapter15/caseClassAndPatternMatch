@@ -1,0 +1,189 @@
+abstract class Expr
+case class Var(name: String) extends Expr
+case class Number(num: Double) extends Expr
+case class UnaryOperator(operator: String, arg: Expr) extends Expr
+case class BinaryOperator(operator: String, left: Expr, right: Expr) extends Expr
+
+
+// 클래스 이름과 같은 팩토리 메서드가 추가됨
+val X = Var("X")
+
+// 클래스 파라미터의 모든 인자가 필드가 됨
+val binaryOperator = BinaryOperator("+", X, Number(1))
+print(binaryOperator.operator)
+print(binaryOperator.left)
+print(binaryOperator.right)
+
+// toString, hashCode, equals의 일반적인 구현을 추가함
+print(binaryOperator)
+print(binaryOperator.hashCode())
+
+// 일부 변경한 복사본을 생성하는 copy 추가
+val minus = binaryOperator.copy("-")
+print(minus)
+
+def simplifyTop(expr: Expr): Expr = expr match {
+  case UnaryOperator("-", UnaryOperator("-", e)) => e
+  case BinaryOperator("+", e, Number(0)) => e
+  case BinaryOperator("*", e, Number(1)) => e
+  case _ => expr
+}
+
+simplifyTop(UnaryOperator("-", UnaryOperator("-", Var("X"))))
+simplifyTop(BinaryOperator("*", Var("X"), Number(1)))
+
+BinaryOperator("+", Number(1), Number(2)) match {
+  case BinaryOperator(_, _, _) => print("Binary Operator")
+  case _ => print("others")
+}
+
+// 상수 패턴
+def constantPattern(x: Any) = x match {
+  case 0 => "Zero"
+  case true => "TRUE"
+  case Nil => "Empty List"
+  case _ => "Default"
+}
+
+print(constantPattern(0))
+print(constantPattern(true))
+print(constantPattern(List()))
+print("Default???")
+
+val variable1 = "hi"
+
+def variablePattern(x: Any) = x match {
+  case `variable1` => print("I`m hi")
+  case variable1 => print(variable1)
+}
+
+variablePattern("hi")
+variablePattern("variable1")
+variablePattern("Variable Pattern")
+
+val binaryMatcher = (expr: Any) => expr match {
+  case BinaryOperator("+", e, Number(0)) => println("a deep match")
+  case _ =>
+}
+
+binaryMatcher(BinaryOperator("+", Var("X"), Number(0)))
+
+def sequenceMatcher(input: List[Int]) = {
+  input match {
+    case List(0, _*) => print(s"length is ${input.length}")
+    case _ =>
+  }
+}
+
+sequenceMatcher(List(1, 2, 3))
+
+sequenceMatcher(List(0, 2, 3, 4))
+
+//def typeMatcher(input: Any) = input match {
+//  case s: String => print("I`m String")
+//  case i: Int => print("I`m Integer")
+//  case m: Map[_, _] => print("I`m map")
+//  case _ => print("Default")
+//}
+//
+//typeMatcher("ssss")
+//typeMatcher(1234)
+//typeMatcher(Var("Default"))
+//typeMatcher(Map("a" -> "b", "b" -> "c"))
+
+def typeMatcher(input: Any) = input match {
+  case m: Map[Int, Int] => print("I`m map")
+  case _ => print("Default")
+}
+
+typeMatcher(Map(1 -> 1, 2 -> 2))
+typeMatcher(Map("a" -> 1, "b" -> 2))
+
+def variableBinding(input: Any) = input match {
+  case UnaryOperator("abs", e @ UnaryOperator("abs", _)) => e
+  case _ => input
+}
+
+println(variableBinding(UnaryOperator("abs", UnaryOperator("abs", Number(10)))))
+
+
+def patternGuard(input: Any) = input match {
+  case BinaryOperator("+", x, y) if x == y => BinaryOperator("*", x, Number(2))
+  case _ => input
+}
+
+patternGuard(10)
+
+// sealed class
+sealed abstract class Expr
+case class Var(name: String) extends Expr
+case class Number(num: Double) extends Expr
+case class UnaryOperator(operator: String, arg: Expr) extends Expr
+case class BinaryOperator(operator: String, left: Expr, right: Expr) extends Expr
+
+def sealedClassMatch(input: Expr) = input match {
+  case Var(_) => input
+  case Number(_) => input
+}
+
+sealedClassMatch(
+  Number(10)
+)
+
+val m = Map[Int, String](1 -> "String")
+m.get(1)
+
+def getOption(x: Option[String]) = x match {
+  case Some(x) => x
+  case None => "?"
+}
+
+print(getOption(m.get(1)))
+
+// 변수 정의에서 패턴 사용하기
+val exp = BinaryOperator("*", Number(5), Number(1))
+
+val BinaryOperator(op, left, right) = exp
+print(op, left, right)
+
+val someWithDefault: Option[Int] => Int = {
+  case Some(x) => x
+  case None => 0
+}
+
+print(someWithDefault(Some(10)))
+print(someWithDefault(None))
+
+val getSecondElement: List[Int] => Int = {
+  case x :: y :: _ => y
+}
+
+print(getSecondElement(List(1, 2, 3)))
+
+
+val getSecond: PartialFunction[List[Int], Int] = {
+  case x:: y :: _ => y
+}
+
+getSecond.isDefinedAt(List(1,2,3))
+getSecond.isDefinedAt(List())
+
+if(getSecond.isDefinedAt(List(1, 2, 3))) print(getSecond.apply(List(1, 2, 3)))
+if(getSecond.isDefinedAt(List())) print(getSecond.apply(List()))
+
+
+new PartialFunction[List[Int], Int] {
+  override def apply(v1: List[Int]): Int = v1 match {
+    case x:: y :: _ => y
+  }
+
+  override def isDefinedAt(x: List[Int]) = x match {
+    case x :: y :: _ => true
+    case _ => false
+  }
+}
+
+val capitals = List(("Korea", "Seoul"), ("France", "Paris"), None, ("SomeCountry", "CapitalA", "CapitalB"))
+for((country, capital) <- capitals) {
+  println(s"Country: ${country} Capital: ${capital}")
+}
