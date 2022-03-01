@@ -1,13 +1,16 @@
 package chapter25
 
-import scala.:+
 import scala.collection._
 
 class Capped[A] private (
     val capacity: Int,
     val length: Int,
     offset: Int,
-    elems: Array[Any]) extends immutable.Iterable[A] with IterableOps[A, Capped, Capped[A]]{
+    elems: Array[Any])
+  extends immutable.Iterable[A]
+    with IterableOps[A, Capped, Capped[A]]
+    with StrictOptimizedIterableOps[A, Capped, Capped[A]]
+{
   self => def this(capacity: Int) = this(capacity, length = 0, offset = 0, elems = Array.ofDim(capacity))
 
   def appended[B >: A](elem: B): Capped[B] = {
@@ -28,15 +31,15 @@ class Capped[A] private (
   def apply(i: Int): A =
     elems((i + offset) % capacity).asInstanceOf[A]
 
-  def iterator: Iterator[A] = new AbstractIterator[A] {
-    private var current = 0
-    def hasNext = current < self.length
-    def next (): A = {
-      val elem = self(current)
-      current += 1
-      elem
-    }
+  def iterator: Iterator[A] = view.iterator
+
+  override def view: IndexedSeqView[A] = new IndexedSeqView[A] {
+    override def apply(i: Int): A = self(i)
+
+    override def length: Int = self.length
   }
+
+  override def knownSize: Int = length
 
   override def className: String = "Capped"
 
@@ -55,7 +58,11 @@ class Capped[A] private (
 
 class CappedFactory(capacity: Int) extends
   IterableFactory[Capped] {
-  def from[A](source: IterableOnce[A]): Capped[A] = (newBuilder[A] ++= source).result()
+  def from[A](source: IterableOnce[A]): Capped[A] =
+    source match {
+      case capped: Capped[A] if capped.capacity == capacity => capped
+      case _ => (newBuilder[A] ++= source).result()
+    }
 
   def empty[A]: Capped[A] = new Capped[A](capacity)
 
